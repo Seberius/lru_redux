@@ -21,55 +21,6 @@ def max_size=(size)
   end
 end
 
-def trim_history
-  until @data.has_key?(@s_hist.get_tail[0]) and not @q_hist.has_key?(@s_hist.get_tail[0]) do
-    @data.delete(@data.first[0])
-  end
-end
-
-def hit(key)
-  value = @data[key]
-  if @s_hist.contains?(key)
-    unless @q_hist.contains?(key)
-      @s_hist[key]
-      trim_history
-    else
-      @s_hist[key]
-      old_s_key = @s_hist.get_tail[0]
-      @s_hist.delete(old_s_key)
-      @q_hist.delete(key)
-      @q_hist[old_s_key]
-      trim_history
-    end
-  else
-    @s_hist[key] = value
-    @q_hist[key]
-  end
-  value
-end
-
-def miss(key, result)
-  if @s_hist.length < @max_size
-    @s_hist[key] = nil
-    @data[key] = result
-  else
-    old_q_key = @q_hist.get_tail[0]
-    @data.delete(old_q_key)
-    @q_hist.delete(old_q_key)
-    @s_hist[key] = nil
-    unless @s_hist.contains?(key)
-      @data[key] = result
-      @q_hist[key] = nil
-    else
-      old_s_key = @s_hist.get_tail[0]
-      @s_hist.delete(old_s_key)
-      @q_hist[old_s_key] = nil
-      trim_history
-    end
-  end
-  result
-end
-
 def getset(key)
   found = @data.has_key?(key)
   if found
@@ -124,19 +75,78 @@ def getset(key)
 
   def delete(k)
     @data.delete(k)
+    @s_hist.delete(k)
+    @q_hist.delete(k)
   end
 
   def clear
     @data.clear
+    @s_hist.clear
+    @q_hist.clear
   end
 
   def count
     @data.count
   end
 
+  def contains?(key)
+    @data.has_key?(key)
+  end
+
 
   # for cache validation only, ensures all is sound
   def valid?
-    true
+    @s_hist.valid? and @q_hist.valid?
+  end
+
+  protected
+
+  def trim_history
+    until @data.has_key?(@s_hist.get_tail[0]) and not @q_hist.has_key?(@s_hist.get_tail[0]) do
+      @data.delete(@data.first[0])
+    end
+  end
+
+  def hit(key)
+    value = @data[key]
+    if @s_hist.contains?(key)
+      unless @q_hist.contains?(key)
+        @s_hist[key]
+        trim_history
+      else
+        @s_hist[key]
+        old_s_key = @s_hist.get_tail[0]
+        @s_hist.delete(old_s_key)
+        @q_hist.delete(key)
+        @q_hist[old_s_key]
+        trim_history
+      end
+    else
+      @s_hist[key] = value
+      @q_hist[key]
+    end
+    value
+  end
+
+  def miss(key, result)
+    if @s_hist.length < @max_size
+      @s_hist[key] = nil
+      @data[key] = result
+    else
+      old_q_key = @q_hist.get_tail[0]
+      @data.delete(old_q_key)
+      @q_hist.delete(old_q_key)
+      unless @s_hist.contains?(key)
+        @data[key] = result
+        @q_hist[key] = nil
+      else
+        old_s_key = @s_hist.get_tail[0]
+        @s_hist.delete(old_s_key)
+        @q_hist[old_s_key] = nil
+        trim_history
+      end
+      @s_hist[key] = nil
+    end
+    result
   end
 end

@@ -17,6 +17,6 @@ class LruRedux::ThreadSafeCache < LruRedux::Cache
     end
   end
 
-  synchronize :[], :[]=, :each, :to_a, :delete, :count, :valid?, :max_size, :fetch, :getset
+  synchronize :[], :[]=, :each, :to_a, :delete, :count, :valid?, :max_size, :fetch, :getset, :contains?, :get_tail
 
 end
