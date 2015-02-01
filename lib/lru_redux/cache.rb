@@ -101,6 +101,14 @@ class LruRedux::Cache
     @data.count
   end
 
+  def contains?(key)
+    @data.has_key?(key)
+  end
+
+  def get_tail
+    @tail[1,2]
+  end
+
   # for cache validation only, ensures all is sound
   def valid?
     expected = {}

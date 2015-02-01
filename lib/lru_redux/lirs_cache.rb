@@ -4,8 +4,8 @@ class LruRedux::LirsCache
   def initialize(max_size)
     @max_size = max_size
     @data = {}
-    @s_hist = LruRedux::LirsHistory.new(max_size)
-    @q_hist = LruRedux::LirsHistory.new(max_size)
+    @s_hist = LruRedux::Cache.new(max_size)
+    @q_hist = LruRedux::Cache.new(max_size)
   end
 end
 
@@ -22,7 +22,7 @@ def max_size=(size)
 end
 
 def trim_history
-  until @data.has_key?(@s_hist.first[0]) and not @q_hist.has_key?(@s_hist.first[0]) do
+  until @data.has_key?(@s_hist.get_tail[0]) and not @q_hist.has_key?(@s_hist.get_tail[0]) do
     @data.delete(@data.first[0])
   end
 end
@@ -35,10 +35,10 @@ def hit(key)
       trim_history
     else
       @s_hist[key]
-      s_to_q_set = @s_hist.first
-      @s_hist.delete(s_to_q_set[0])
+      old_s_key = @s_hist.get_tail[0]
+      @s_hist.delete(old_s_key)
       @q_hist.delete(key)
-      @q_hist[s_to_q_set]
+      @q_hist[old_s_key]
       trim_history
     end
   else
@@ -53,7 +53,7 @@ def miss(key, result)
     @s_hist[key] = nil
     @data[key] = result
   else
-    old_q_key = @q_hist.first[0]
+    old_q_key = @q_hist.get_tail[0]
     @data.delete(old_q_key)
     @q_hist.delete(old_q_key)
     @s_hist[key] = nil
@@ -61,7 +61,7 @@ def miss(key, result)
       @data[key] = result
       @q_hist[key] = nil
     else
-      old_s_key = @s_hist.first[]
+      old_s_key = @s_hist.get_tail[0]
       @s_hist.delete(old_s_key)
       @q_hist[old_s_key] = nil
       trim_history

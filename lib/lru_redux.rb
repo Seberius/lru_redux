@@ -11,4 +11,7 @@ if LruRedux.is_19?
 else
   require "lru_redux/cache"
 end
+require "lru_redux/lirs_cache"
 require "lru_redux/thread_safe_cache"
+require "lru_redux/thread_safe_lirs_cache"
+
