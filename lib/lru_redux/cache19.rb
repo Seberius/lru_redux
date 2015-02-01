@@ -73,8 +73,8 @@ class LruRedux::Cache
     array.reverse!
   end
 
-  def delete(k)
-    @data.delete(k)
+  def delete(key)
+    @data.delete(key)
   end
 
   def clear
@@ -85,14 +85,9 @@ class LruRedux::Cache
     @data.count
   end
 
-  def contains?(key)
+  def has_key?(key)
     @data.has_key?(key)
   end
-
-  def get_tail
-    @data.first
-  end
-
 
   # for cache validation only, ensures all is sound
   def valid?

@@ -82,8 +82,8 @@ class LruRedux::Cache
     a
   end
 
-  def delete(k)
-    if node = @data.delete(k)
+  def delete(key)
+    if node = @data.delete(key)
       prev = node[0]
       nex = node[3]
 
@@ -101,12 +101,8 @@ class LruRedux::Cache
     @data.count
   end
 
-  def contains?(key)
+  def has_key?(key)
     @data.has_key?(key)
-  end
-
-  def get_tail
-    @tail[1,2]
   end
 
   # for cache validation only, ensures all is sound

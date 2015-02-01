@@ -4,30 +4,23 @@ class LruRedux::LirsCache
   def initialize(max_size)
     @max_size = max_size
     @data = {}
-    @s_hist = LruRedux::Cache.new(max_size)
-    @q_hist = LruRedux::Cache.new(max_size)
+    @s_hist = LruRedux::LirsHistory.new
+    @q_hist = LruRedux::LirsHistory.new
   end
-end
 
-def max_size=(size)
-  raise ArgumentError.new(:max_size) if @max_size < 1
-  @max_size = size
-  @s_hist.max_size = size
-  @q_hist.max_size = size
-  if @max_size < @data.size
-    @data.keys[0..@max_size-@data.size].each do |k|
-      @data.delete(k)
+  def max_size=(size)
+    raise ArgumentError.new(:max_size) if @max_size < 1
+    @max_size = size
+  end
+
+  def getset(key)
+    found = @data.has_key?(key)
+    if found
+      hit(key)
+    else
+      result = yield
+      miss(key, result)
     end
-  end
-end
-
-def getset(key)
-  found = @data.has_key?(key)
-  if found
-    hit(key)
-  else
-    result = yield
-    miss(key, result)
   end
 
   def fetch(key)
@@ -89,10 +82,9 @@ def getset(key)
     @data.count
   end
 
-  def contains?(key)
+  def has_key?(key)
     @data.has_key?(key)
   end
-
 
   # for cache validation only, ensures all is sound
   def valid?
@@ -102,50 +94,52 @@ def getset(key)
   protected
 
   def trim_history
-    until @data.has_key?(@s_hist.get_tail[0]) and not @q_hist.has_key?(@s_hist.get_tail[0]) do
-      @data.delete(@data.first[0])
+    s_hist_tail_key = @s_hist.get_tail[0]
+    until @data.has_key?(s_hist_tail_key) and not @q_hist.has_key?(s_hist_tail_key) do
+      @s_hist.delete(s_hist_tail_key)
+      s_hist_tail_key = @s_hist.get_tail[0]
     end
   end
 
   def hit(key)
     value = @data[key]
     if @s_hist.contains?(key)
-      unless @q_hist.contains?(key)
-        @s_hist[key]
-        trim_history
-      else
-        @s_hist[key]
+      if @q_hist.contains?(key)
+        @s_hist.refresh(key)
         old_s_key = @s_hist.get_tail[0]
         @s_hist.delete(old_s_key)
         @q_hist.delete(key)
-        @q_hist[old_s_key]
+        @q_hist.set_key(key,nil)
+        trim_history
+      else
+        @s_hist.refresh(key)
         trim_history
       end
     else
-      @s_hist[key] = value
-      @q_hist[key]
+      @s_hist.set_key(key,nil)
+      @q_hist.refresh(key)
     end
     value
   end
 
   def miss(key, result)
     if @s_hist.length < @max_size
-      @s_hist[key] = nil
       @data[key] = result
+      @s_hist.set_key(key,nil)
     else
       old_q_key = @q_hist.get_tail[0]
       @data.delete(old_q_key)
       @q_hist.delete(old_q_key)
-      unless @s_hist.contains?(key)
-        @data[key] = result
-        @q_hist[key] = nil
-      else
+      if @s_hist.contains?(key)
         old_s_key = @s_hist.get_tail[0]
         @s_hist.delete(old_s_key)
-        @q_hist[old_s_key] = nil
+        @q_hist.set_key(old_s_key,nil)
         trim_history
+      else
+        @data[key] = result
+        @q_hist.set_key(key,nil)
       end
-      @s_hist[key] = nil
+      @s_hist.set_key(key,nil)
     end
     result
   end

@@ -8,8 +8,10 @@ end
 require "lru_redux/version"
 if LruRedux.is_19?
   require "lru_redux/cache19"
+  require "lru_redux/lirs_history19"
 else
   require "lru_redux/cache"
+  require "lru_redux/lirs_history"
 end
 require "lru_redux/lirs_cache"
 require "lru_redux/thread_safe_cache"
