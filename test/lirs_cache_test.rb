@@ -4,7 +4,7 @@ require 'minitest/pride'
 
 class LirsCacheTest < MiniTest::Test
   def setup
-    @c = LruRedux::LirsCache.new(4)
+    @c = LruRedux::LirsCache.new(3)
   end
 
   def teardown

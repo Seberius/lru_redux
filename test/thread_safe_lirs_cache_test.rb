@@ -1,8 +1,8 @@
 require_relative 'lirs_cache_test'
 
-class ThreadSafeCacheTest < LirsCacheTest
+class ThreadSafeLirsCacheTest < LirsCacheTest
   def setup
-    @c = LruRedux::ThreadSafeLirsCache.new(4)
+    @c = LruRedux::ThreadSafeLirsCache.new(3)
   end
 
   def test_recursion

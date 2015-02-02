@@ -5,8 +5,8 @@ require File.expand_path('../../lib/lru_redux', __FILE__)
 
 lru_redux = LruRedux::Cache.new(1_000)
 lru_redux_thread_safe = LruRedux::ThreadSafeCache.new(1_000)
-lru_redux_lirs = LruRedux::LirsCache.new(1_000)
-lru_redux_lirs_thread_safe = LruRedux::ThreadSafeLirsCache.new(1_000)
+lru_redux_lirs = LruRedux::LirsCache.new(990, 10)
+lru_redux_lirs_thread_safe = LruRedux::ThreadSafeLirsCache.new(990, 10)
 
 Benchmark.bmbm do |bm|
 

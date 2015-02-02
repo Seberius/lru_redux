@@ -1,22 +1,23 @@
 
 
 class LruRedux::LirsCache
-  def initialize(max_size)
-    raise ArgumentError.new(:max_size) if max_size < 2
-    @max_size = max_size
-    @q_size = [max_size/100,1].max
+  def initialize(s_limit,q_limit = 1)
+    raise ArgumentError.new('S Limit must be 1 or greater.') if s_limit < 1
+    raise ArgumentError.new('Q Limit must be 1 or greater.') if q_limit < 1
+    @s_limit = s_limit
+    @q_limit = q_limit
     @data = {}
     @s_hist = LruRedux::LirsHistory.new
     @q_hist = LruRedux::LirsHistory.new
   end
 
-  def max_size=(size)
-    raise ArgumentError.new(:max_size) if size < 2
-    @max_size = size
-    @q_size = [size/100,1].max
-    if @data.size > @max_size
-      clear
-    end
+  def max_size=(s_limit, q_limit = nil)
+    q_limit ||= @q_limit
+    raise ArgumentError.new('S Limit must be 1 or greater.') if s_limit < 1
+    raise ArgumentError.new('Q Limit must be 1 or greater.') if q_limit < 1
+    @s_limit = s_limit
+    @q_limit = q_limit
+    clear
   end
 
   def getset(key)
@@ -107,7 +108,7 @@ class LruRedux::LirsCache
 
   def trim_history
     s_hist_tail = @s_hist.get_tail
-    while s_hist_tail and (!@data.has_key?(s_hist_tail[0]) or @q_hist.has_key?(s_hist_tail[0])) do
+    while @q_hist.has_key?(s_hist_tail[0]) || !@data.has_key?(s_hist_tail[0]) do
       @s_hist.delete(s_hist_tail[0])
       s_hist_tail = @s_hist.get_tail
     end
@@ -116,14 +117,15 @@ class LruRedux::LirsCache
   def hit(key)
     value = @data[key]
     if @s_hist.has_key?(key)
-      old_s_key = @s_hist.get_tail[0]
       if @q_hist.has_key?(key)
         @s_hist.refresh(key)
         @q_hist.delete(key)
+        old_s_key = @s_hist.get_tail[0]
         @s_hist.delete(old_s_key)
         @q_hist.set_key(old_s_key,nil)
         trim_history
       else
+        old_s_key = @s_hist.get_tail[0]
         @s_hist.refresh(key)
         if old_s_key == key
           trim_history
@@ -137,17 +139,14 @@ class LruRedux::LirsCache
   end
 
   def miss(key, result)
-    if @data.size < @max_size
+    if @s_hist.count < @s_limit
       @data[key] = result
       @s_hist.set_key(key,nil)
-      if @data.size > (@max_size - @q_size)
-        @q_hist.set_key(key,nil)
-      end
     else
-      old_q_set = @q_hist.get_tail
-      if old_q_set
-        @data.delete(old_q_set[0])
-        @q_hist.delete(old_q_set[0])
+      if @q_hist.count >= @q_limit
+        old_q_key = @q_hist.get_tail[0]
+        @data.delete(old_q_key)
+        @q_hist.delete(old_q_key)
       end
       @data[key] = result
       if @s_hist.has_key?(key)

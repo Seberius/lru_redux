@@ -3,8 +3,8 @@ require 'monitor'
 
 class LruRedux::ThreadSafeLirsCache < LruRedux::LirsCache
   include MonitorMixin
-  def initialize(size)
-    super(size)
+  def initialize(s_limit, q_limit = 1)
+    super(s_limit, q_limit)
   end
 
   def self.synchronize(*methods)
@@ -17,6 +17,6 @@ class LruRedux::ThreadSafeLirsCache < LruRedux::LirsCache
     end
   end
 
-  synchronize :[], :[]=, :each, :to_a, :delete, :count, :valid?, :max_size, :fetch, :getset, :has_key?
+  synchronize :[], :[]=, :each, :to_a, :delete, :count, :valid?, :max_size=, :fetch, :getset, :has_key?
 
 end
