@@ -2,15 +2,16 @@
 
 class LruRedux::LirsCache
   def initialize(max_size)
-    @max_size = max_size
+    raise ArgumentError.new(:max_size) if @max_size < 2
+    @max_size = max_size.to_i / 2
     @data = {}
     @s_hist = LruRedux::LirsHistory.new
     @q_hist = LruRedux::LirsHistory.new
   end
 
   def max_size=(size)
-    raise ArgumentError.new(:max_size) if @max_size < 1
-    @max_size = size
+    raise ArgumentError.new(:max_size) if @max_size < 2
+    @max_size = size.to_i / 2
   end
 
   def getset(key)
@@ -66,10 +67,16 @@ class LruRedux::LirsCache
     array.reverse!
   end
 
-  def delete(k)
-    @data.delete(k)
-    @s_hist.delete(k)
-    @q_hist.delete(k)
+  def hist_to_a
+    s_array = @s_hist.to_a
+    q_array = @q_hist.to_a
+    [s_array, q_array]
+  end
+
+  def delete(key)
+    @data.delete(key)
+    @s_hist.delete(key)
+    @q_hist.delete(key)
   end
 
   def clear
@@ -94,22 +101,22 @@ class LruRedux::LirsCache
   protected
 
   def trim_history
-    s_hist_tail_key = @s_hist.get_tail[0]
-    until @data.has_key?(s_hist_tail_key) and not @q_hist.has_key?(s_hist_tail_key) do
-      @s_hist.delete(s_hist_tail_key)
-      s_hist_tail_key = @s_hist.get_tail[0]
+    s_hist_tail = @s_hist.get_tail
+    until s_hist_tail.nil? or (@data.has_key?(s_hist_tail[0]) and not @q_hist.has_key?(s_hist_tail[0])) do
+      @s_hist.delete(s_hist_tail[0])
+      s_hist_tail = @s_hist.get_tail
     end
   end
 
   def hit(key)
     value = @data[key]
-    if @s_hist.contains?(key)
-      if @q_hist.contains?(key)
+    if @s_hist.has_key?(key)
+      if @q_hist.has_key?(key)
         @s_hist.refresh(key)
         old_s_key = @s_hist.get_tail[0]
         @s_hist.delete(old_s_key)
         @q_hist.delete(key)
-        @q_hist.set_key(key,nil)
+        @q_hist.set_key(old_s_key,nil)
         trim_history
       else
         @s_hist.refresh(key)
@@ -123,14 +130,18 @@ class LruRedux::LirsCache
   end
 
   def miss(key, result)
-    if @s_hist.length < @max_size
+    if @s_hist.count < @max_size
       @data[key] = result
       @s_hist.set_key(key,nil)
     else
-      old_q_key = @q_hist.get_tail[0]
-      @data.delete(old_q_key)
-      @q_hist.delete(old_q_key)
-      if @s_hist.contains?(key)
+      old_q_set = @q_hist.get_tail
+      if old_q_set
+        @data.delete(old_q_set[0])
+        @q_hist.delete(old_q_set[0])
+      end
+      if @s_hist.has_key?(key)
+        @data[key] = result
+        @s_hist.refresh(key)
         old_s_key = @s_hist.get_tail[0]
         @s_hist.delete(old_s_key)
         @q_hist.set_key(old_s_key,nil)

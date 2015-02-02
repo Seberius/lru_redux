@@ -17,12 +17,21 @@ class LruRedux::LirsHistory
     val
   end
 
+  def to_a
+    array = @data.to_a
+    array.reverse!
+  end
+
   def delete(key)
     @data.delete(key)
   end
 
   def clear
     @data.clear
+  end
+
+  def count
+    @data.size
   end
 
   def has_key?(key)

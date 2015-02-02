@@ -25,6 +25,10 @@ class LruRedux::LirsHistory < LruRedux::Cache
   end
 
   def get_tail
-    @tail[1,2]
+    if @tail
+      @tail[1,2]
+    else
+      nil
+    end
   end
 end

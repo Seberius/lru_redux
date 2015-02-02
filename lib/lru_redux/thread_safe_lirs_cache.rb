@@ -1,7 +1,7 @@
 require 'thread'
 require 'monitor'
 
-class LruRedux::ThreadSafeCache < LruRedux::LirsCache
+class LruRedux::ThreadSafeLirsCache < LruRedux::LirsCache
   include MonitorMixin
   def initialize(size)
     super(size)
