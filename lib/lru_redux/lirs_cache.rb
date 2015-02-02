@@ -2,7 +2,7 @@
 
 class LruRedux::LirsCache
   def initialize(max_size)
-    raise ArgumentError.new(:max_size) if @max_size < 2
+    raise ArgumentError.new(:max_size) if max_size < 2
     @max_size = max_size.to_i / 2
     @data = {}
     @s_hist = LruRedux::LirsHistory.new
@@ -10,7 +10,7 @@ class LruRedux::LirsCache
   end
 
   def max_size=(size)
-    raise ArgumentError.new(:max_size) if @max_size < 2
+    raise ArgumentError.new(:max_size) if size < 2
     @max_size = size.to_i / 2
   end
 

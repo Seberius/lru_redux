@@ -1,4 +1,4 @@
-require 'cache_test'
+require_relative 'cache_test'
 
 class ThreadSafeCacheTest < CacheTest
   def setup
