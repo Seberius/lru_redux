@@ -8,15 +8,15 @@ class LruRedux::Cache
   # This makes this much more annoying to code, but gives us a 5-10% edge
 
   def initialize(max_size)
-    @s_limit = max_size
+    @max_size = max_size
     @data = {}
     @head = nil
     @tail = nil
   end
 
   def max_size=(size)
-    raise ArgumentError.new(:s_limit) if @s_limit < 1
-    @s_limit = size
+    raise ArgumentError.new(:s_limit) if @max_size < 1
+    @max_size = size
     while pop_tail
       # no op
     end
@@ -150,7 +150,7 @@ class LruRedux::Cache
   end
 
   def pop_tail
-    if @data.length > @s_limit
+    if @data.length > @max_size
       @data.delete(@tail[1])
       @tail = @tail[3]
       @tail[0] = nil

@@ -2,16 +2,16 @@ require_relative 'lirs_cache_test'
 
 class ThreadSafeLirsCacheTest < LirsCacheTest
   def setup
-    @c = LruRedux::ThreadSafeLirsCache.new(3)
+    @cache = LruRedux::ThreadSafeLirsCache.new(2,1)
   end
 
   def test_recursion
-    @c[:a] = 1
-    @c[:b] = 2
+    @cache[:a] = 1
+    @cache[:b] = 2
 
     # should not blow up
-    @c.each do |k,v|
-      @c[k]
+    @cache.each do |k,_|
+      @cache[k]
     end
   end
 end
