@@ -1,4 +1,8 @@
-require_relative 'cache_test'
+if LruRedux.is_19?
+  require_relative 'cache_test'
+else
+  require './cache_test'
+end
 
 class ThreadSafeCacheTest < CacheTest
   def setup

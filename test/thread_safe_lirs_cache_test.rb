@@ -1,4 +1,8 @@
-require_relative 'lirs_cache_test'
+if LruRedux.is_19?
+  require_relative 'lirs_cache_test'
+else
+  require './lirs_cache_test'
+end
 
 class ThreadSafeLirsCacheTest < LirsCacheTest
   def setup

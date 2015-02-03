@@ -83,12 +83,25 @@ class LruRedux::Cache
   end
 
   def delete(key)
-    if node = @data.delete(key)
-      prev = node[0]
-      nex = node[3]
+    node = @data.delete(key)
+    if node
+      if node[3].nil?
+        @head = @head[0]
+        if @head.nil?
+          @tail = nil
+        else
+          @head[3] = nil
+        end
+      elsif node[0].nil?
+        @tail = @tail[3]
+        @tail[0] = nil
+      else
+        prev = node[0]
+        nex = node[3]
 
-      prev[3] = nex if prev
-      nex[0] = prev if nex
+        prev[3] = nex if prev
+        nex[0] = prev if nex
+      end
     end
   end
 
@@ -98,7 +111,7 @@ class LruRedux::Cache
   end
 
   def count
-    @data.count
+    @data.size
   end
 
   def has_key?(key)
@@ -114,7 +127,7 @@ class LruRedux::Cache
       return false if @data[k][2] != v
       count += 1
     end
-    count == @data.count
+    count == @data.size
   end
 
   protected

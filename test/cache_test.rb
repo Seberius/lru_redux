@@ -57,9 +57,18 @@ class CacheTest < MiniTest::Test
     @cache[:a] = 1
     @cache[:b] = 2
     @cache[:c] = 3
+    @cache.delete(:a)
 
+    assert_equal [[:c,3],[:b,2]], @cache.to_a
+    assert_nil @cache[:a]
+
+    # Regression test for a bug in the legacy delete method
     @cache.delete(:b)
-    assert_equal [[:c,3],[:a,1]], @cache.to_a
+    @cache[:d] = 4
+    @cache[:e] = 5
+    @cache[:f] = 6
+
+    assert_equal [[:f,6],[:e,5],[:d,4]], @cache.to_a
     assert_nil @cache[:b]
   end
 
