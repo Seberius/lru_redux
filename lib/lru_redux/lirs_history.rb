@@ -24,6 +24,12 @@ class LruRedux::LirsHistory < LruRedux::Cache
     node[2]
   end
 
+  def each_key
+    @data.each_key do |key|
+      yield key
+    end
+  end
+
   def get_tail
     if @tail
       @tail[1,2]

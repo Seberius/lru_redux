@@ -34,6 +34,12 @@ class LruRedux::LirsHistory
     @data.size
   end
 
+  def each_key
+    @data.each_key do |key|
+      yield key
+    end
+  end
+
   def has_key?(key)
     @data.has_key?(key)
   end

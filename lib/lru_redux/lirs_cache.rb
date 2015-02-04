@@ -1,23 +1,29 @@
 
 
 class LruRedux::LirsCache
-  def initialize(s_limit,q_limit = 1)
-    raise ArgumentError.new('S Limit must be 1 or greater.') if s_limit < 1
-    raise ArgumentError.new('Q Limit must be 1 or greater.') if q_limit < 1
+  def initialize(s_limit, q_limit)
+    raise ArgumentError.new('S Limit must be 1 or greater.') if s_limit.nil? || s_limit < 1
+    raise ArgumentError.new('Q Limit must be 1 or greater.') if q_limit.nil? || q_limit < 1
     @s_limit = s_limit
     @q_limit = q_limit
+    @cache_limit = s_limit + q_limit
     @data = {}
     @s_hist = LruRedux::LirsHistory.new
     @q_hist = LruRedux::LirsHistory.new
   end
 
-  def max_size=(s_limit, q_limit = nil)
+  def max_size=(args)
+    s_limit, q_limit = args
     q_limit ||= @q_limit
-    raise ArgumentError.new('S Limit must be 1 or greater.') if s_limit < 1
-    raise ArgumentError.new('Q Limit must be 1 or greater.') if q_limit < 1
-    @s_limit = s_limit
-    @q_limit = q_limit
-    clear
+    raise ArgumentError.new('S Limit must be 1 or greater.') if s_limit.nil? || s_limit < 1
+    raise ArgumentError.new('Q Limit must be 1 or greater.') if q_limit.nil? || q_limit < 1
+    if s_limit != @s_limit || q_limit != @q_limit
+      @s_limit = s_limit
+      @q_limit = q_limit
+      @cache_limit = s_limit + q_limit
+      remove_non_res_hir
+      downsize
+    end
   end
 
   def getset(key)
@@ -81,7 +87,6 @@ class LruRedux::LirsCache
 
   def delete(key)
     @data.delete(key)
-    @s_hist.delete(key)
     @q_hist.delete(key)
   end
 
@@ -111,6 +116,34 @@ class LruRedux::LirsCache
     while @q_hist.has_key?(s_hist_tail[0]) || !@data.has_key?(s_hist_tail[0]) do
       @s_hist.delete(s_hist_tail[0])
       s_hist_tail = @s_hist.get_tail
+    end
+  end
+
+  def remove_non_res_hir
+    @s_hist.each_key {|key| @s_hist.delete(key) unless @data.has_key?(key)}
+    @q_hist.each_key {|key| @q_hist.delete(key) if @s_hist.has_key?(key)}
+  end
+
+  def downsize
+    while @q_hist.count > @q_limit
+      key = @q_hist.get_tail[0]
+      @q_hist.delete(key)
+      @data.delete(key)
+    end
+    while @q_hist.count > 0 && @data.size > @cache_limit
+      key = @q_hist.get_tail[0]
+      @q_hist.delete(key)
+      @data.delete(key)
+    end
+    while @data.size > @cache_limit
+      key = @s_hist.get_tail[0]
+      @s_hist.delete(key)
+      @data.delete(key)
+    end
+    while @s_hist.count > @s_limit
+      key = @s_hist.get_tail[0]
+      @s_hist.delete(key)
+      @q_hist.set_key(key, nil)
     end
   end
 
