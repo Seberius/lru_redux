@@ -97,7 +97,7 @@ class LruRedux::LirsCache
   end
 
   def count
-    @data.count
+    @data.size
   end
 
   def has_key?(key)
@@ -120,17 +120,17 @@ class LruRedux::LirsCache
   end
 
   def remove_non_res_hir
-    @s_hist.each_key {|key| @s_hist.delete(key) unless @data.has_key?(key)}
-    @q_hist.each_key {|key| @q_hist.delete(key) if @s_hist.has_key?(key)}
+    @s_hist.each_set {|key, _| @s_hist.delete(key) unless @data.has_key?(key)}
+    @q_hist.each_set {|key, _| @q_hist.delete(key) if @s_hist.has_key?(key)}
   end
 
   def downsize
-    while @q_hist.count > @q_limit
+    while @q_hist.size > @q_limit
       key = @q_hist.get_tail[0]
       @q_hist.delete(key)
       @data.delete(key)
     end
-    while @q_hist.count > 0 && @data.size > @cache_limit
+    while @q_hist.size > 0 && @data.size > @cache_limit
       key = @q_hist.get_tail[0]
       @q_hist.delete(key)
       @data.delete(key)
@@ -140,7 +140,7 @@ class LruRedux::LirsCache
       @s_hist.delete(key)
       @data.delete(key)
     end
-    while @s_hist.count > @s_limit
+    while @s_hist.size > @s_limit
       key = @s_hist.get_tail[0]
       @s_hist.delete(key)
       @q_hist.set_key(key, nil)
@@ -172,11 +172,11 @@ class LruRedux::LirsCache
   end
 
   def miss(key, result)
-    if @s_hist.count < @s_limit
+    if @s_hist.size < @s_limit
       @data[key] = result
       @s_hist.set_key(key,nil)
     else
-      if @q_hist.count >= @q_limit
+      if @q_hist.size >= @q_limit
         old_q_key = @q_hist.get_tail[0]
         @data.delete(old_q_key)
         @q_hist.delete(old_q_key)
