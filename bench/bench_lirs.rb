@@ -17,7 +17,7 @@ Benchmark.bmbm do |bm|
   ].each do |cache, name|
     bm.report name do
       1_000_000.times do
-        cache[rand(2_000)] ||= :value
+        cache.getset(rand(2_000)) {:value}
       end
     end
   end

@@ -17,6 +17,10 @@ class LruRedux::LirsHistory
     val
   end
 
+  def set_tail(key,val)
+    @data.merge!(Hash[key,val])
+  end
+
   def to_a
     array = @data.to_a
     array.reverse!
@@ -46,6 +50,10 @@ class LruRedux::LirsHistory
 
   def has_key?(key)
     @data.has_key?(key)
+  end
+
+  def get_head_key
+    @data.keys.last
   end
 
   def get_tail

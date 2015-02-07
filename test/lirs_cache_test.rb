@@ -92,7 +92,7 @@ class LirsCacheTest < MiniTest::Test
 
     assert_equal [[:c,3],[:a,1]], @cache.to_a
     assert_nil @cache[:b]
-    assert_equal [[[:c,nil],[:b,nil],[:a,nil]], [[:c,nil]]], @cache.hist_to_a
+    assert_equal [[[:c,nil],[:b,nil],[:a,nil]], []], @cache.hist_to_a
   end
 
   def test_update

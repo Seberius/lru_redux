@@ -24,6 +24,19 @@ class LruRedux::LirsHistory < LruRedux::Cache
     node[2]
   end
 
+  def set_tail(key,val)
+    if @data.has_key?(key)
+      node = @data[key]
+      node[2] = val
+    elsif @tail
+      node = @tail
+      @tail = [nil,key,val,node]
+      node[0] = @tail
+    else
+      @head = @tail = [nil,key,val,nil]
+    end
+  end
+
   def size
     @data.size
   end
@@ -31,6 +44,14 @@ class LruRedux::LirsHistory < LruRedux::Cache
   def each_set
     @data.each do |key, value|
       yield key, value
+    end
+  end
+
+  def get_head_key
+    if @head
+      @head[1]
+    else
+      nil
     end
   end
 
