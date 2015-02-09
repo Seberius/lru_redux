@@ -116,7 +116,7 @@ class LruRedux::LirsCache
 
   # for cache validation only, ensures all is sound
   def valid?
-    @s_hist.valid? and @q_hist.valid?
+    @s_hist.valid? && @q_hist.valid?
   end
 
   protected
@@ -125,10 +125,10 @@ class LruRedux::LirsCache
     @s_hist.each_set {|key, _| @s_hist.delete(key) unless @data.has_key?(key)}
     @q_hist.each_set {|key, _| @q_hist.delete(key) if @s_hist.has_key?(key)}
 
-    while @q_hist.size > @q_limit
-      key = @q_hist.get_tail[0]
-      @q_hist.delete(key)
-      @data.delete(key)
+    while @s_hist.size < @s_limit && @q_hist.size > 0
+      q_head_key = @q_hist.get_head_key
+      @s_hist.set_tail(q_head_key, nil)
+      @q_hist.delete(q_head_key)
     end
 
     while @q_hist.size > 0 && @data.size > @cache_limit
