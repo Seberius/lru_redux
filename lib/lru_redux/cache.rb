@@ -15,7 +15,7 @@ class LruRedux::Cache
   end
 
   def max_size=(size)
-    raise ArgumentError.new(:s_limit) if @max_size < 1
+    raise ArgumentError.new(:max_size) if @max_size < 1
     @max_size = size
     while pop_tail
       # no op

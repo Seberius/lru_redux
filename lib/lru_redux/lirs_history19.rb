@@ -18,7 +18,7 @@ class LruRedux::LirsHistory
   end
 
   def set_tail(key,val)
-    @data.merge!(Hash[key,val])
+    @data.replace(Hash[key,val].merge(@data))
   end
 
   def to_a

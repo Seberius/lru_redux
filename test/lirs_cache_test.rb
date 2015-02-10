@@ -85,14 +85,35 @@ class LirsCacheTest < MiniTest::Test
   end
 
   def test_delete
-    @cache[:a] = 1
-    @cache[:b] = 2
-    @cache[:c] = 3
+    @cache.max_size = 3, 2
+    @cache.getset(:a) {1}
+    @cache.getset(:b) {2}
+    @cache.getset(:c) {3}
+    @cache.getset(:d) {4}
+    @cache.getset(:e) {5}
+    @cache.getset(:a) {1}
+    @cache.getset(:f) {6}
+    @cache.getset(:e) {5}
+    @cache.getset(:g) {7}
+
+    assert_equal [[:g, 7], [:e, 5], [:c, 3], [:b, 2], [:a, 1]], @cache.to_a
+    assert_equal [[[:g, nil], [:e, nil], [:f, nil], [:a, nil], [:d, nil], [:c, nil]], [[:g, nil], [:b, nil]]],
+                 @cache.hist_to_a
+
+    @cache.delete(:e)
+
+    assert_equal [[:g, 7], [:c, 3], [:b, 2], [:a, 1]], @cache.to_a
+    assert_equal [[[:g, nil], [:e, nil], [:f, nil], [:a, nil], [:d, nil], [:c, nil]], [[:b, nil]]], @cache.hist_to_a
+
+    @cache.delete(:c)
+
+    assert_equal [[:g, 7], [:b, 2], [:a, 1]], @cache.to_a
+    assert_equal [[[:g, nil], [:e, nil], [:f, nil], [:a, nil], [:d, nil], [:c, nil], [:b, nil]], []], @cache.hist_to_a
+
     @cache.delete(:b)
 
-    assert_equal [[:c,3],[:a,1]], @cache.to_a
-    assert_nil @cache[:b]
-    assert_equal [[[:c,nil],[:b,nil],[:a,nil]], []], @cache.hist_to_a
+    assert_equal [[:g, 7], [:a, 1]], @cache.to_a
+    assert_equal [[[:g, nil], [:e, nil], [:f, nil], [:a, nil]], []], @cache.hist_to_a
   end
 
   def test_update
@@ -130,9 +151,14 @@ class LirsCacheTest < MiniTest::Test
     @cache[:a] = 1
     @cache[:b] = 2
     @cache[:c] = 3
+
+    assert_equal [[:c,3],[:b,2],[:a,1]], @cache.to_a
+    assert_equal [[[:c,nil],[:b,nil],[:a,nil]], [[:c,nil]]], @cache.hist_to_a
+
     @cache.max_size = 1, 1
 
-    assert_equal [[:c,3],[:b,2]], @cache.to_a
+    assert_equal [[:b,2],[:a,1]], @cache.to_a
+    assert_equal [[[:c,nil],[:b,nil]], [[:a,nil]]], @cache.hist_to_a
   end
 
   def test_each

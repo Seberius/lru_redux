@@ -92,8 +92,11 @@ class LruRedux::LirsCache
         @q_hist.delete(key)
       elsif @q_hist.size > 0
         q_head_key = @q_hist.get_head_key
-        @s_hist.set_tail(q_head_key, nil)
         @q_hist.delete(q_head_key)
+
+        unless @s_hist.has_key?(q_head_key)
+          @s_hist.set_tail(q_head_key, nil)
+        end
       end
 
       trim_history
@@ -114,21 +117,44 @@ class LruRedux::LirsCache
     @data.has_key?(key)
   end
 
-  # for cache validation only, ensures all is sound
+  # s_hist and q_hist should be valid (legacy check)
+  # if q_hist has items the s_hist allocation of data should be at s_limit
+  # s_hist allocation should not exceed s_limit
   def valid?
-    @s_hist.valid? && @q_hist.valid?
+    @s_hist.valid? && @q_hist.valid? &&
+        if @q_hist.size > 0
+          @data.size - @q_hist.size == @s_limit
+        else
+          @data.size <= @s_limit
+        end
   end
 
   protected
 
-  def resize
-    @s_hist.each_set {|key, _| @s_hist.delete(key) unless @data.has_key?(key)}
-    @q_hist.each_set {|key, _| @q_hist.delete(key) if @s_hist.has_key?(key)}
+  def trim_history
+    s_hist_tail = @s_hist.get_tail
+    while @q_hist.has_key?(s_hist_tail[0]) || !@data.has_key?(s_hist_tail[0]) do
+      @s_hist.delete(s_hist_tail[0])
+      s_hist_tail = @s_hist.get_tail
+    end
+  end
 
-    while @s_hist.size < @s_limit && @q_hist.size > 0
+  def resize
+    s_size = 0
+
+    @s_hist.each_set do |key, _|
+      s_size += 1 if @data.has_key?(key) && !@q_hist.has_key?(key)
+    end
+
+    while s_size < @s_limit && @q_hist.size > 0
       q_head_key = @q_hist.get_head_key
-      @s_hist.set_tail(q_head_key, nil)
+
+      unless @s_hist.has_key?(q_head_key)
+        @s_hist.set_tail(q_head_key, nil)
+      end
+
       @q_hist.delete(q_head_key)
+      s_size += 1
     end
 
     while @q_hist.size > 0 && @data.size > @cache_limit
@@ -139,22 +165,16 @@ class LruRedux::LirsCache
 
     while @data.size > @cache_limit
       key = @s_hist.get_tail[0]
-      @s_hist.delete(key)
       @data.delete(key)
+      s_size -= 1
     end
 
-    while @s_hist.size > @s_limit
+    while s_size > @s_limit
       key = @s_hist.get_tail[0]
       @s_hist.delete(key)
       @q_hist.set_key(key, nil)
-    end
-  end
-
-  def trim_history
-    s_hist_tail = @s_hist.get_tail
-    while @q_hist.has_key?(s_hist_tail[0]) || !@data.has_key?(s_hist_tail[0]) do
-      @s_hist.delete(s_hist_tail[0])
-      s_hist_tail = @s_hist.get_tail
+      trim_history
+      s_size -= 1
     end
   end
 
